@@ -1,6 +1,7 @@
 // oddsly/lib/screens/home_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:oddsly/screens/live_screen.dart';
 import 'package:oddsly/services/api_service.dart';
 import 'package:oddsly/services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -49,7 +50,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   TextButton(
                     onPressed: () {
-                      // Navigate to Live screen
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => LiveScreen(onBetPlaced: () {})),
+                      );
                     },
                     child: const Text('Все матчи →'),
                   ),
@@ -222,6 +225,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20),
+        
         children: [
           _buildTournamentCard(
             title: 'Premier League',
