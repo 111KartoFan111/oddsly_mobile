@@ -1,228 +1,68 @@
+// lib/services/api_service.dart
 
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:oddsly/models/user_model.dart';
 import 'package:oddsly/models/match_model.dart';
+import 'package:oddsly/services/firebase_service.dart';
 
 class ApiService {
-  final String _baseUrl = 'http://localhost:3000';
+  final FirebaseService _firebaseService = FirebaseService();
 
+  // Заглушка для совместимости (больше не используется)
   Future<void> saveToken(String token) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('user_token', token);
+    // Token теперь управляется Firebase Auth
   }
 
   Future<String?> getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('user_token');
+    // Token теперь управляется Firebase Auth
+    return null;
   }
 
   Future<void> clearToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('user_token');
+    // Token теперь управляется Firebase Auth
   }
 
-  Future<Map<String, dynamic>> register(String email, String password) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/register'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email, 'password': password}),
-      );
-      return jsonDecode(response.body);
-    } catch (e) {
-      return {'message': 'Connection error: ${e.toString()}'};
-    }
-  }
-
-  Future<Map<String, dynamic>> login(String email, String password) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email, 'password': password}),
-      );
-      final data = jsonDecode(response.body);
-      if (data.containsKey('token')) {
-        await saveToken(data['token']);
-      }
-      return data;
-    } catch (e) {
-      return {'message': 'Connection error: ${e.toString()}'};
-    }
-  }
+  // ==================== USER OPERATIONS ====================
 
   Future<UserModel?> getUserProfile() async {
-    final token = await getToken();
-    if (token == null) return null;
-
-    try {
-      final response = await http.get(
-        Uri.parse('$_baseUrl/me'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        return UserModel.fromJson(jsonDecode(response.body));
-      } else {
-        return null;
-      }
-    } catch (e) {
-      return null;
-    }
+    return await _firebaseService.getUserProfile();
   }
+
+  // ==================== MATCH OPERATIONS ====================
 
   Future<List<MatchModel>> getMatches({String? status, String? league}) async {
-    try {
-      final Map<String, String> queryParams = {};
-      if (status != null) queryParams['status'] = status;
-      if (league != null) queryParams['league'] = league;
-
-      final uri = Uri.parse(
-        '$_baseUrl/matches',
-      ).replace(queryParameters: queryParams);
-
-      final response = await http.get(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        return data.map((json) => MatchModel.fromJson(json)).toList();
-      } else {
-        return [];
-      }
-    } catch (e) {
-      return [];
-    }
-  }
-
-  Future<List<dynamic>> getTransactionHistory() async {
-    final token = await getToken();
-    if (token == null) throw Exception('User not authenticated');
-
-    try {
-      final response = await http.get(
-        Uri.parse('$_baseUrl/transactions'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        return [];
-      }
-    } catch (e) {
-      return [];
-    }
-  }
-
-  Future<Map<String, dynamic>> withdrawBalance(
-    double amount,
-    String cardNumber,
-  ) async {
-    final token = await getToken();
-    if (token == null) {
-      return {'message': 'User not authenticated.'};
-    }
-
-    try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/withdraw'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode({'amount': amount, 'cardNumber': cardNumber}),
-      );
-      return jsonDecode(response.body);
-    } catch (e) {
-      return {'message': 'Connection error: ${e.toString()}'};
-    }
-  }
-
-  Future<Map<String, dynamic>> depositBalance(
-    double amount,
-    String method, {
-    String? cardNumber,
-  }) async {
-    final token = await getToken();
-    if (token == null) {
-      return {'message': 'User not authenticated.'};
-    }
-
-    try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/deposit'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode({
-          'amount': amount,
-          'method': method,
-          'cardNumber': cardNumber,
-        }),
-      );
-      return jsonDecode(response.body);
-    } catch (e) {
-      return {'message': 'Connection error: ${e.toString()}'};
-    }
+    return await _firebaseService.getMatches(status: status);
   }
 
   Future<List<MatchModel>> getLiveMatches(String sport) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$_baseUrl/matches/live?sport=$sport'),
-        headers: {'Content-Type': 'application/json'},
-      );
+    final matches = await _firebaseService.getMatches(sport: sport);
+    
+    // Сортировка: live вверху, затем по дате
+    matches.sort((a, b) {
+      if (a.isLive && !b.isLive) return -1;
+      if (!a.isLive && b.isLive) return 1;
 
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        final matches = data.map((json) => MatchModel.fromJson(json)).toList();
+      final dateA = a.matchDate is DateTime 
+          ? a.matchDate as DateTime
+          : DateTime.parse(a.matchDate.toString());
+      final dateB = b.matchDate is DateTime
+          ? b.matchDate as DateTime
+          : DateTime.parse(b.matchDate.toString());
+      return dateA.compareTo(dateB);
+    });
 
-        // Сортировка: live вверху, затем по дате
-        matches.sort((a, b) {
-          if (a.isLive && !b.isLive) return -1;
-          if (!a.isLive && b.isLive) return 1;
-
-          final dateA = DateTime.parse(a.matchDate.toString());
-          final dateB = DateTime.parse(b.matchDate.toString());
-          return dateA.compareTo(dateB);
-        });
-
-        return matches;
-      } else {
-        return [];
-      }
-    } catch (e) {
-      return [];
-    }
+    return matches;
   }
 
   Future<MatchModel?> getMatchDetails(String matchId) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$_baseUrl/matches/$matchId'),
-        headers: {'Content-Type': 'application/json'},
-      );
-
-      if (response.statusCode == 200) {
-        return MatchModel.fromJson(jsonDecode(response.body));
-      } else {
-        return null;
-      }
-    } catch (e) {
-      return null;
-    }
+    // В реальном приложении получать конкретный матч по ID
+    final matches = await _firebaseService.getMatches();
+    return matches.firstWhere(
+      (match) => match.id == matchId,
+      orElse: () => matches.first,
+    );
   }
+
+  // ==================== BET OPERATIONS ====================
 
   Future<Map<String, dynamic>> placeBet(
     String matchId,
@@ -230,50 +70,71 @@ class ApiService {
     String outcome, {
     Map<String, dynamic>? matchInfo,
   }) async {
-    final token = await getToken();
-    if (token == null) {
-      return {'message': 'User not authenticated.'};
+    // Извлечь коэффициент из outcome (например, "П1 - 2.1")
+    final parts = outcome.split(' - ');
+    double coefficient = 1.0;
+    if (parts.length == 2) {
+      coefficient = double.tryParse(parts[1]) ?? 1.0;
     }
 
-    try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/bet'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode({
-          'matchId': matchId,
-          'amount': amount,
-          'outcome': outcome,
-          'matchInfo': matchInfo,
-        }),
-      );
-      return jsonDecode(response.body);
-    } catch (e) {
-      return {'message': 'Connection error: ${e.toString()}'};
-    }
+    final result = await _firebaseService.placeBet(
+      matchId: matchId,
+      amount: amount,
+      outcome: outcome,
+      coefficient: coefficient,
+      matchInfo: matchInfo ?? {},
+    );
+
+    return result;
   }
 
   Future<List<dynamic>> getBetHistory() async {
-    final token = await getToken();
-    if (token == null) throw Exception('User not authenticated');
+    final bets = await _firebaseService.getBetHistory();
+    return bets.map((bet) => {
+      'id': bet.id,
+      'amount': bet.amount,
+      'matchId': bet.matchId,
+      'outcome': bet.outcome,
+      'status': bet.status,
+      'createdAt': bet.createdAt,
+      'team1Name': bet.team1Name,
+      'team2Name': bet.team2Name,
+      'league': bet.league,
+    }).toList();
+  }
 
-    try {
-      final response = await http.get(
-        Uri.parse('$_baseUrl/my-bets'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        return [];
-      }
-    } catch (e) {
-      return [];
-    }
+  // ==================== TRANSACTION OPERATIONS ====================
+
+  Future<List<dynamic>> getTransactionHistory() async {
+    return await _firebaseService.getTransactionHistory();
+  }
+
+  Future<Map<String, dynamic>> depositBalance(
+    double amount,
+    String method, {
+    String? cardNumber,
+  }) async {
+    return await _firebaseService.createDeposit(
+      amount: amount,
+      method: method,
+      cardNumber: cardNumber,
+    );
+  }
+
+  Future<Map<String, dynamic>> withdrawBalance(
+    double amount,
+    String cardNumber,
+  ) async {
+    return await _firebaseService.createWithdrawal(
+      amount: amount,
+      cardNumber: cardNumber,
+    );
+  }
+
+  // ==================== INITIALIZATION ====================
+
+  /// Инициализация тестовых данных (вызывать один раз при первом запуске)
+  Future<void> initializeTestData() async {
+    await _firebaseService.seedTestMatches();
   }
 }

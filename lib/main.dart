@@ -1,11 +1,27 @@
+// lib/main.dart
+
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:oddsly/auth_gate.dart';
+import 'package:oddsly/services/api_service.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  
+  // Инициализация Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  // Инициализация тестовых данных (матчей)
+  // Эта операция выполнится только один раз
+  try {
+    final apiService = ApiService();
+    await apiService.initializeTestData();
+  } catch (e) {
+    print('Error initializing test data: $e');
+  }
 
   runApp(const MyApp());
 }

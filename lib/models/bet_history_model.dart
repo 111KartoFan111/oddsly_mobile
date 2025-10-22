@@ -1,3 +1,5 @@
+// lib/models/bet_history_model.dart
+
 class BetHistory {
   final String id;
   final double amount;
@@ -8,6 +10,8 @@ class BetHistory {
   final String team1Name;
   final String team2Name;
   final String league;
+  final double? coefficient;
+  final double? potentialWin;
 
   BetHistory({
     required this.id,
@@ -19,6 +23,8 @@ class BetHistory {
     required this.team1Name,
     required this.team2Name,
     required this.league,
+    this.coefficient,
+    this.potentialWin,
   });
 
   factory BetHistory.fromJson(Map<String, dynamic> json) {
@@ -32,6 +38,28 @@ class BetHistory {
       team1Name: json['team1Name'] ?? 'Unknown',
       team2Name: json['team2Name'] ?? 'Unknown',
       league: json['league'] ?? 'Unknown',
+      coefficient: json['coefficient'] != null 
+          ? (json['coefficient'] as num).toDouble() 
+          : null,
+      potentialWin: json['potentialWin'] != null
+          ? (json['potentialWin'] as num).toDouble()
+          : null,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'amount': amount,
+      'matchId': matchId,
+      'outcome': outcome,
+      'status': status,
+      'createdAt': createdAt,
+      'team1Name': team1Name,
+      'team2Name': team2Name,
+      'league': league,
+      'coefficient': coefficient,
+      'potentialWin': potentialWin,
+    };
   }
 }

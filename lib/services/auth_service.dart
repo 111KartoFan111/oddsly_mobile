@@ -1,3 +1,5 @@
+// lib/services/auth_service.dart
+
 import 'dart:io' show Platform;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -5,6 +7,7 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
 import 'dart:math';
+import 'package:oddsly/services/firebase_service.dart';
 
 class AuthService {
   AuthService({FirebaseAuth? firebaseAuth})
@@ -12,6 +15,7 @@ class AuthService {
 
   final FirebaseAuth _auth;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final FirebaseService _firebaseService = FirebaseService();
 
   User? get currentUser => _auth.currentUser;
 
@@ -32,6 +36,12 @@ class AuthService {
       if (name != null && name.isNotEmpty) {
         await userCredential.user?.updateDisplayName(name);
       }
+
+      // Создать профиль в Firestore
+      await _firebaseService.createUserProfile(
+        email: email,
+        displayName: name,
+      );
 
       final String? idToken = await userCredential.user?.getIdToken();
       
@@ -67,6 +77,15 @@ class AuthService {
         email: email,
         password: password,
       );
+
+      // Проверить наличие профиля в Firestore, создать если нет
+      final profile = await _firebaseService.getUserProfile();
+      if (profile == null) {
+        await _firebaseService.createUserProfile(
+          email: email,
+          displayName: userCredential.user?.displayName,
+        );
+      }
 
       final String? idToken = await userCredential.user?.getIdToken();
       
@@ -112,6 +131,15 @@ class AuthService {
 
       final UserCredential userCredential = 
           await _auth.signInWithCredential(credential);
+
+      // Проверить наличие профиля в Firestore, создать если нет
+      final profile = await _firebaseService.getUserProfile();
+      if (profile == null) {
+        await _firebaseService.createUserProfile(
+          email: userCredential.user!.email!,
+          displayName: userCredential.user?.displayName,
+        );
+      }
       
       final String? idToken = await userCredential.user?.getIdToken();
       
@@ -174,6 +202,12 @@ class AuthService {
         if (fullName.isNotEmpty) {
           await userCredential.user?.updateDisplayName(fullName);
         }
+
+        // Создать профиль в Firestore
+        await _firebaseService.createUserProfile(
+          email: userCredential.user!.email!,
+          displayName: fullName.isNotEmpty ? fullName : null,
+        );
       }
 
       final String? idToken = await userCredential.user?.getIdToken();
@@ -299,7 +333,6 @@ class AuthService {
     return _auth.currentUser?.emailVerified ?? false;
   }
 
-
   Future<Map<String, dynamic>> sendEmailVerification() async {
     try {
       await _auth.currentUser?.sendEmailVerification();
@@ -330,6 +363,7 @@ class AuthService {
     final digest = sha256.convert(bytes);
     return digest.toString();
   }
+
   String _getErrorMessage(String code) {
     switch (code) {
       case 'weak-password':
@@ -360,6 +394,7 @@ class AuthService {
         return 'Произошла ошибка. Попробуйте еще раз.';
     }
   }
+
   Future<String?> signInWithGoogleAndGetIdToken() async {
     final result = await signInWithGoogle();
     return result['success'] == true ? result['token'] : null;

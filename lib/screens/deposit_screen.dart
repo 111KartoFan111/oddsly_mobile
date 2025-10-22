@@ -94,22 +94,33 @@ class _DepositScreenState extends State<DepositScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
+          icon: const Icon(Icons.chevron_left, color: Colors.black, size: 24),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text('ПОПОЛНЕНИЕ'),
+        title: const Text(
+          'ПОПОЛНЕНИЕ',
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 12,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 0.5,
+          ),
+        ),
         centerTitle: true,
         actions: [
           Container(
             margin: const EdgeInsets.only(right: 16),
-            width: 32,
-            height: 32,
             decoration: BoxDecoration(
               color: const Color(0xFFF3F4F5),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(Icons.settings, size: 20, color: Colors.black),
+            child: IconButton(
+              icon: const Icon(Icons.sports_basketball, color: Colors.black, size: 20),
+              onPressed: () {},
+            ),
           ),
         ],
       ),
@@ -122,12 +133,16 @@ class _DepositScreenState extends State<DepositScreen> {
             FutureBuilder(
               future: _apiService.getUserProfile(),
               builder: (context, snapshot) {
-                final balance = snapshot.data?.balance ?? 0;
-                return Text(
-                  '₸${NumberFormat('#,##0', 'ru_RU').format(balance)}',
-                  style: const TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.w900,
+                final balance = snapshot.data?.balance ?? 12580;
+                return Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    '₸${NumberFormat('#,##0', 'ru_RU').format(balance)}',
+                    style: const TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.black,
+                    ),
                   ),
                 );
               },
@@ -247,7 +262,7 @@ class _DepositScreenState extends State<DepositScreen> {
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 12,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ),
@@ -257,8 +272,9 @@ class _DepositScreenState extends State<DepositScreen> {
                           child: const Text(
                             'Коммиссия 5%',
                             style: TextStyle(
-                              color: Colors.white70,
+                              color: Colors.white,
                               fontSize: 12,
+                              fontWeight: FontWeight.w400,
                             ),
                           ),
                         ),
@@ -290,7 +306,7 @@ class _DepositScreenState extends State<DepositScreen> {
                             style: TextStyle(
                               color: Colors.black,
                               fontSize: 12,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ),
@@ -302,6 +318,7 @@ class _DepositScreenState extends State<DepositScreen> {
                             style: TextStyle(
                               color: Colors.black54,
                               fontSize: 12,
+                              fontWeight: FontWeight.w400,
                             ),
                           ),
                         ),
@@ -328,6 +345,11 @@ class _DepositScreenState extends State<DepositScreen> {
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
                 ),
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black,
+                ),
               ),
             ),
             const SizedBox(height: 20),
@@ -346,6 +368,11 @@ class _DepositScreenState extends State<DepositScreen> {
                   hintText: '₸ 200',
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                ),
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black,
                 ),
               ),
             ),
@@ -376,6 +403,7 @@ class _DepositScreenState extends State<DepositScreen> {
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.black54,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                 ),
@@ -409,7 +437,7 @@ class _DepositScreenState extends State<DepositScreen> {
                         'Пополнить депозит',
                         style: TextStyle(
                           fontSize: 12,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w700,
                           color: Colors.white,
                         ),
                       ),
