@@ -27,8 +27,8 @@ class AuthService {
     String? name,
   }) async {
     try {
-      final UserCredential userCredential = 
-          await _auth.createUserWithEmailAndPassword(
+      final UserCredential userCredential =
+      await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
@@ -37,14 +37,15 @@ class AuthService {
         await userCredential.user?.updateDisplayName(name);
       }
 
-      // Создать профиль в Firestore
+      // Создать профиль в Firestore с uid
       await _firebaseService.createUserProfile(
+        uid: userCredential.user!.uid,
         email: email,
         displayName: name,
       );
 
       final String? idToken = await userCredential.user?.getIdToken();
-      
+
       return {
         'success': true,
         'token': idToken,
@@ -72,23 +73,24 @@ class AuthService {
     required String password,
   }) async {
     try {
-      final UserCredential userCredential = 
-          await _auth.signInWithEmailAndPassword(
+      final UserCredential userCredential =
+      await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
 
       // Проверить наличие профиля в Firestore, создать если нет
-      final profile = await _firebaseService.getUserProfile();
+      final profile = await _firebaseService.getUserProfile(userCredential.user!.uid);
       if (profile == null) {
         await _firebaseService.createUserProfile(
+          uid: userCredential.user!.uid,
           email: email,
           displayName: userCredential.user?.displayName,
         );
       }
 
       final String? idToken = await userCredential.user?.getIdToken();
-      
+
       return {
         'success': true,
         'token': idToken,
@@ -121,28 +123,29 @@ class AuthService {
         };
       }
 
-      final GoogleSignInAuthentication googleAuth = 
-          await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth =
+      await googleUser.authentication;
 
       final OAuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      final UserCredential userCredential = 
-          await _auth.signInWithCredential(credential);
+      final UserCredential userCredential =
+      await _auth.signInWithCredential(credential);
 
       // Проверить наличие профиля в Firestore, создать если нет
-      final profile = await _firebaseService.getUserProfile();
+      final profile = await _firebaseService.getUserProfile(userCredential.user!.uid);
       if (profile == null) {
         await _firebaseService.createUserProfile(
+          uid: userCredential.user!.uid,
           email: userCredential.user!.email!,
           displayName: userCredential.user?.displayName,
         );
       }
-      
+
       final String? idToken = await userCredential.user?.getIdToken();
-      
+
       return {
         'success': true,
         'token': idToken,
@@ -178,8 +181,8 @@ class AuthService {
       final rawNonce = _generateNonce();
       final nonce = _sha256ofString(rawNonce);
 
-      final AuthorizationCredentialAppleID appleCredential = 
-          await SignInWithApple.getAppleIDCredential(
+      final AuthorizationCredentialAppleID appleCredential =
+      await SignInWithApple.getAppleIDCredential(
         scopes: [
           AppleIDAuthorizationScopes.email,
           AppleIDAuthorizationScopes.fullName,
@@ -192,26 +195,27 @@ class AuthService {
         rawNonce: rawNonce,
       );
 
-      final UserCredential userCredential = 
-          await _auth.signInWithCredential(credential);
+      final UserCredential userCredential =
+      await _auth.signInWithCredential(credential);
 
       if (userCredential.additionalUserInfo?.isNewUser == true) {
-        final fullName = 
-            '${appleCredential.givenName ?? ''} ${appleCredential.familyName ?? ''}'
-                .trim();
+        final fullName =
+        '${appleCredential.givenName ?? ''} ${appleCredential.familyName ?? ''}'
+            .trim();
         if (fullName.isNotEmpty) {
           await userCredential.user?.updateDisplayName(fullName);
         }
 
         // Создать профиль в Firestore
         await _firebaseService.createUserProfile(
+          uid: userCredential.user!.uid,
           email: userCredential.user!.email!,
           displayName: fullName.isNotEmpty ? fullName : null,
         );
       }
 
       final String? idToken = await userCredential.user?.getIdToken();
-      
+
       return {
         'success': true,
         'token': idToken,
@@ -353,8 +357,8 @@ class AuthService {
         '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
     final random = Random.secure();
     return List.generate(
-      length, 
-      (_) => charset[random.nextInt(charset.length)]
+        length,
+            (_) => charset[random.nextInt(charset.length)]
     ).join();
   }
 

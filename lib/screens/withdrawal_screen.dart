@@ -3,6 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:oddsly/services/api_service.dart';
 import 'package:intl/intl.dart';
+import 'package:oddsly/screens/deposit_screen.dart';
+import 'package:oddsly/screens/bet_history_screen.dart';
 
 class WithdrawalScreen extends StatefulWidget {
   const WithdrawalScreen({super.key});
@@ -97,7 +99,15 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
           icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text('ВЫВОД'),
+        title: const Text(
+          'ВЫВОД',
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 12,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 0.5,
+          ),
+        ),
         centerTitle: true,
         actions: [
           Container(
@@ -108,7 +118,14 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
               color: const Color(0xFFF3F4F5),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(Icons.settings, size: 20, color: Colors.black),
+            child: IconButton(
+              icon: const Icon(Icons.sports_basketball, color: Colors.black, size: 20),
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const BetHistoryScreen()),
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -144,7 +161,13 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                 children: [
                   Expanded(
                     child: GestureDetector(
-                      onTap: () => setState(() => _isDepositSelected = true),
+                        onTap: () {
+                          // navigate to Deposit screen
+                          setState(() => _isDepositSelected = true);
+                          Navigator.of(context).pushReplacement(
+                            MaterialPageRoute(builder: (_) => const DepositScreen()),
+                          );
+                        },
                       child: Container(
                         height: 48,
                         decoration: BoxDecoration(
@@ -174,7 +197,9 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                   ),
                   Expanded(
                     child: GestureDetector(
-                      onTap: () => setState(() => _isDepositSelected = false),
+                        onTap: () {
+                          setState(() => _isDepositSelected = false);
+                        },
                       child: Container(
                         height: 48,
                         decoration: BoxDecoration(

@@ -72,18 +72,9 @@ class _LiveScreenState extends State<LiveScreen> {
         title: Row(
           children: const [
             Text(
-              '● LIVE',
+              '● LINE',
               style: TextStyle(
                 color: Colors.black,
-                fontWeight: FontWeight.bold,
-                fontSize: 24,
-              ),
-            ),
-            SizedBox(width: 16),
-            Text(
-              'LINE',
-              style: TextStyle(
-                color: Colors.grey,
                 fontWeight: FontWeight.bold,
                 fontSize: 24,
               ),

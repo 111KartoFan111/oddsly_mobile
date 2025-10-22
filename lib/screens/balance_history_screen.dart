@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:oddsly/services/api_service.dart';
 import 'package:oddsly/screens/deposit_screen.dart';
 import 'package:oddsly/screens/withdrawal_screen.dart';
+import 'package:oddsly/screens/bet_history_screen.dart';
 import 'package:intl/intl.dart';
 
 class BalanceHistoryScreen extends StatefulWidget {
@@ -35,22 +36,23 @@ class _BalanceHistoryScreenState extends State<BalanceHistoryScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
         title: const Text('БАЛАНС'),
         centerTitle: true,
         actions: [
           Container(
             margin: const EdgeInsets.only(right: 16),
-            width: 32,
-            height: 32,
             decoration: BoxDecoration(
               color: const Color(0xFFF3F4F5),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(Icons.settings, size: 20, color: Colors.black),
+            child: IconButton(
+              icon: const Icon(Icons.sports_basketball, color: Colors.black, size: 20),
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const BetHistoryScreen()),
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -85,26 +87,30 @@ class _BalanceHistoryScreenState extends State<BalanceHistoryScreen> {
               children: [
                 Expanded(
                   child: GestureDetector(
-                    onTap: () => setState(() => _isDepositSelected = true),
+                    onTap: () {
+                      setState(() => _isDepositSelected = true);
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const DepositScreen()),
+                      );
+                    },
                     child: Container(
                       height: 48,
                       decoration: BoxDecoration(
-                        color: _isDepositSelected ? Colors.black : Colors.transparent,
+                        // keep transparent background for both buttons
+                        color: Colors.transparent,
                         borderRadius: const BorderRadius.only(
                           topLeft: Radius.circular(6),
                           bottomLeft: Radius.circular(6),
                         ),
-                        border: _isDepositSelected 
-                            ? null 
-                            : const Border(
-                                right: BorderSide(color: Colors.black, width: 1),
-                              ),
+                        border: const Border(
+                          right: BorderSide(color: Colors.black, width: 1),
+                        ),
                       ),
                       child: Center(
                         child: Text(
                           'Пополнение',
                           style: TextStyle(
-                            color: _isDepositSelected ? Colors.white : Colors.black,
+                            color: Colors.black,
                             fontSize: 12,
                             fontWeight: FontWeight.w900,
                           ),
@@ -115,26 +121,30 @@ class _BalanceHistoryScreenState extends State<BalanceHistoryScreen> {
                 ),
                 Expanded(
                   child: GestureDetector(
-                    onTap: () => setState(() => _isDepositSelected = false),
+                    onTap: () {
+                      setState(() => _isDepositSelected = false);
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const WithdrawalScreen()),
+                      );
+                    },
                     child: Container(
                       height: 48,
                       decoration: BoxDecoration(
-                        color: _isDepositSelected ? Colors.transparent : Colors.black,
+                        // keep transparent background for both buttons
+                        color: Colors.transparent,
                         borderRadius: const BorderRadius.only(
                           topRight: Radius.circular(6),
                           bottomRight: Radius.circular(6),
                         ),
-                        border: _isDepositSelected 
-                            ? const Border(
-                                left: BorderSide(color: Colors.black, width: 1),
-                              )
-                            : null,
+                        border: const Border(
+                          left: BorderSide(color: Colors.black, width: 1),
+                        ),
                       ),
                       child: Center(
                         child: Text(
                           'Вывод',
                           style: TextStyle(
-                            color: _isDepositSelected ? Colors.black : Colors.white,
+                            color: Colors.black,
                             fontSize: 12,
                             fontWeight: FontWeight.w900,
                           ),

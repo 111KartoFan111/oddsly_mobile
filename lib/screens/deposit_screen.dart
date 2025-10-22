@@ -3,6 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:oddsly/services/api_service.dart';
 import 'package:intl/intl.dart';
+import 'package:oddsly/screens/withdrawal_screen.dart';
+import 'package:oddsly/screens/bet_history_screen.dart';
 
 class DepositScreen extends StatefulWidget {
   const DepositScreen({super.key});
@@ -119,7 +121,11 @@ class _DepositScreenState extends State<DepositScreen> {
             ),
             child: IconButton(
               icon: const Icon(Icons.sports_basketball, color: Colors.black, size: 20),
-              onPressed: () {},
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const BetHistoryScreen()),
+                );
+              },
             ),
           ),
         ],
@@ -135,7 +141,7 @@ class _DepositScreenState extends State<DepositScreen> {
               builder: (context, snapshot) {
                 final balance = snapshot.data?.balance ?? 12580;
                 return Align(
-                  alignment: Alignment.centerRight,
+                  alignment: Alignment.center,
                   child: Text(
                     '₸${NumberFormat('#,##0', 'ru_RU').format(balance)}',
                     style: const TextStyle(
@@ -160,7 +166,10 @@ class _DepositScreenState extends State<DepositScreen> {
                 children: [
                   Expanded(
                     child: GestureDetector(
-                      onTap: () => setState(() => _isDepositSelected = true),
+                        onTap: () {
+                          // already on DepositScreen — just ensure state
+                          setState(() => _isDepositSelected = true);
+                        },
                       child: Container(
                         height: 48,
                         decoration: BoxDecoration(
@@ -190,7 +199,13 @@ class _DepositScreenState extends State<DepositScreen> {
                   ),
                   Expanded(
                     child: GestureDetector(
-                      onTap: () => setState(() => _isDepositSelected = false),
+                        onTap: () {
+                          // navigate to Withdrawal screen
+                          setState(() => _isDepositSelected = false);
+                          Navigator.of(context).pushReplacement(
+                            MaterialPageRoute(builder: (_) => const WithdrawalScreen()),
+                          );
+                        },
                       child: Container(
                         height: 48,
                         decoration: BoxDecoration(
