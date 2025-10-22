@@ -11,7 +11,6 @@ class BetHistory {
   final String team2Name;
   final String league;
   final double? coefficient;
-  final double? potentialWin;
 
   BetHistory({
     required this.id,
@@ -24,7 +23,6 @@ class BetHistory {
     required this.team2Name,
     required this.league,
     this.coefficient,
-    this.potentialWin,
   });
 
   factory BetHistory.fromJson(Map<String, dynamic> json) {
@@ -41,25 +39,6 @@ class BetHistory {
       coefficient: json['coefficient'] != null 
           ? (json['coefficient'] as num).toDouble() 
           : null,
-      potentialWin: json['potentialWin'] != null
-          ? (json['potentialWin'] as num).toDouble()
-          : null,
     );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'amount': amount,
-      'matchId': matchId,
-      'outcome': outcome,
-      'status': status,
-      'createdAt': createdAt,
-      'team1Name': team1Name,
-      'team2Name': team2Name,
-      'league': league,
-      'coefficient': coefficient,
-      'potentialWin': potentialWin,
-    };
   }
 }

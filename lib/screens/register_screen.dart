@@ -1,3 +1,5 @@
+// lib/screens/register_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:oddsly/screens/main_screen.dart';
 import 'package:oddsly/services/auth_service.dart';
@@ -186,7 +188,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   if (value == null || value.isEmpty) {
                     return 'Введите email';
                   }
-                  if (!RegExp(r'^[\w\-.]+@([\w-]+\.)+[\w-]{2,4}\$').hasMatch(value)) {
+                  if (!RegExp(r'^[\w\-.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
                     return 'Введите корректный email';
                   }
                   return null;
@@ -380,5 +382,3 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 }
-
-
