@@ -20,6 +20,7 @@ class _DepositScreenState extends State<DepositScreen> {
   bool _isLoading = false;
   bool _agreedToTerms = false;
   bool _isDepositSelected = true;
+  bool _isCardPayment = true;
 
   @override
   void dispose() {
@@ -57,10 +58,12 @@ class _DepositScreenState extends State<DepositScreen> {
       _isLoading = true;
     });
 
+    // choose method based on selected payment type
+    final method = _isCardPayment ? 'card' : 'apple_pay';
     final result = await _apiService.depositBalance(
       amount,
-      'card',
-      cardNumber: _cardController.text,
+      method,
+      cardNumber: _isCardPayment ? _cardController.text : null,
     );
 
     if (!mounted) return;
@@ -239,105 +242,110 @@ class _DepositScreenState extends State<DepositScreen> {
             const SizedBox(height: 20),
             
             // Payment method selection
+            // Payment method selection (tappable)
             Row(
               children: [
-                // Card payment (selected)
                 Expanded(
-                  child: Container(
-                    height: 127,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFF4B00),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Stack(
-                      children: [
-                        Positioned(
-                          left: 16,
-                          top: 16,
-                          child: Container(
-                            width: 24,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: const Icon(Icons.credit_card, color: Colors.black, size: 16),
-                          ),
-                        ),
-                        Positioned(
-                          right: 16,
-                          top: 16,
-                          child: const Icon(Icons.star, color: Colors.white, size: 24),
-                        ),
-                        Positioned(
-                          left: 16,
-                          bottom: 27,
-                          child: const Text(
-                            'На карту',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
+                  child: GestureDetector(
+                    onTap: () => setState(() => _isCardPayment = true),
+                    child: Container(
+                      height: 127,
+                      decoration: BoxDecoration(
+                        color: _isCardPayment ? const Color(0xFFFF4B00) : const Color(0xFFF3F4F5),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Stack(
+                        children: [
+                          Positioned(
+                            left: 16,
+                            top: 16,
+                            child: Container(
+                              width: 24,
+                              height: 24,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Icon(Icons.credit_card, color: _isCardPayment ? Colors.black : Colors.black, size: 16),
                             ),
                           ),
-                        ),
-                        Positioned(
-                          left: 16,
-                          bottom: 16,
-                          child: const Text(
-                            'Коммиссия 5%',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w400,
+                          Positioned(
+                            right: 16,
+                            top: 16,
+                            child: Icon(_isCardPayment ? Icons.star : Icons.star_border, color: _isCardPayment ? Colors.white : Colors.black, size: 24),
+                          ),
+                          Positioned(
+                            left: 16,
+                            bottom: 27,
+                            child: Text(
+                              'Картой',
+                              style: TextStyle(
+                                color: _isCardPayment ? Colors.white : Colors.black,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                          Positioned(
+                            left: 16,
+                            bottom: 16,
+                            child: Text(
+                              'Коммиссия 5%',
+                              style: TextStyle(
+                                color: _isCardPayment ? Colors.white : Colors.black54,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(width: 16),
-                // Balance payment (unselected)
                 Expanded(
-                  child: Container(
-                    height: 127,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF3F4F5),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Stack(
-                      children: [
-                        Positioned(
-                          right: 16,
-                          top: 16,
-                          child: const Icon(Icons.star_border, color: Colors.black, size: 24),
-                        ),
-                        Positioned(
-                          left: 16,
-                          bottom: 27,
-                          child: const Text(
-                            'На баланс',
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
+                  child: GestureDetector(
+                    onTap: () => setState(() => _isCardPayment = false),
+                    child: Container(
+                      height: 127,
+                      decoration: BoxDecoration(
+                        color: !_isCardPayment ? const Color(0xFFFF4B00) : const Color(0xFFF3F4F5),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Stack(
+                        children: [
+                          Positioned(
+                            right: 16,
+                            top: 16,
+                            child: Icon(!_isCardPayment ? Icons.star : Icons.star_border, color: !_isCardPayment ? Colors.white : Colors.black, size: 24),
+                          ),
+                          Positioned(
+                            left: 16,
+                            bottom: 27,
+                            child: Text(
+                              'Apple Pay',
+                              style: TextStyle(
+                                color: !_isCardPayment ? Colors.white : Colors.black,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
-                        ),
-                        Positioned(
-                          left: 16,
-                          bottom: 16,
-                          child: const Text(
-                            'Коммиссия 0%',
-                            style: TextStyle(
-                              color: Colors.black54,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w400,
+                          Positioned(
+                            left: 16,
+                            bottom: 16,
+                            child: Text(
+                              'Коммиссия 0%',
+                              style: TextStyle(
+                                color: !_isCardPayment ? Colors.white70 : Colors.black54,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w400,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -345,28 +353,29 @@ class _DepositScreenState extends State<DepositScreen> {
             ),
             const SizedBox(height: 20),
             
-            // Card input
-            Container(
-              height: 48,
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.black.withOpacity(0.4)),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: TextField(
-                controller: _cardController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  hintText: '4567 •••• •••• 7702',
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+            // Card input (only when card selected)
+            if (_isCardPayment)
+              Container(
+                height: 48,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.black.withOpacity(0.4)),
+                  borderRadius: BorderRadius.circular(6),
                 ),
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.black,
+                child: TextField(
+                  controller: _cardController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    hintText: '4567 •••• •••• 7702',
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                  ),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black,
+                  ),
                 ),
               ),
-            ),
             const SizedBox(height: 20),
             
             // Amount input

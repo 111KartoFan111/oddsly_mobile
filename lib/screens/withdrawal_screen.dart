@@ -20,6 +20,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
   bool _isLoading = false;
   bool _agreedToTerms = false;
   bool _isDepositSelected = false;
+  bool _isCardPayment = true;
 
   @override
   void dispose() {
@@ -232,104 +233,110 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
             ),
             const SizedBox(height: 20),
             
-            // Payment method selection
+            // Payment method selection (tappable)
             Row(
               children: [
-                // Card payment (selected)
+                // Card payment
                 Expanded(
-                  child: Container(
-                    height: 127,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFF4B00),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Stack(
-                      children: [
-                        Positioned(
-                          left: 16,
-                          top: 16,
-                          child: Container(
-                            width: 24,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: const Icon(Icons.credit_card, color: Colors.black, size: 16),
-                          ),
-                        ),
-                        Positioned(
-                          right: 16,
-                          top: 16,
-                          child: const Icon(Icons.star, color: Colors.white, size: 24),
-                        ),
-                        Positioned(
-                          left: 16,
-                          bottom: 27,
-                          child: const Text(
-                            'На карту',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
+                  child: GestureDetector(
+                    onTap: () => setState(() => _isCardPayment = true),
+                    child: Container(
+                      height: 127,
+                      decoration: BoxDecoration(
+                        color: _isCardPayment ? const Color(0xFFFF4B00) : const Color(0xFFF3F4F5),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Stack(
+                        children: [
+                          Positioned(
+                            left: 16,
+                            top: 16,
+                            child: Container(
+                              width: 24,
+                              height: 24,
+                              decoration: BoxDecoration(
+                                color: _isCardPayment ? Colors.white : Colors.white,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Icon(Icons.credit_card, color: _isCardPayment ? Colors.black : Colors.black, size: 16),
                             ),
                           ),
-                        ),
-                        Positioned(
-                          left: 16,
-                          bottom: 16,
-                          child: const Text(
-                            'Коммиссия 5%',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
+                          Positioned(
+                            right: 16,
+                            top: 16,
+                            child: Icon(_isCardPayment ? Icons.star : Icons.star_border, color: _isCardPayment ? Colors.white : Colors.black, size: 24),
+                          ),
+                          Positioned(
+                            left: 16,
+                            bottom: 27,
+                            child: Text(
+                              'На карту',
+                              style: TextStyle(
+                                color: _isCardPayment ? Colors.white : Colors.black,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                          Positioned(
+                            left: 16,
+                            bottom: 16,
+                            child: Text(
+                              'Коммиссия 5%',
+                              style: TextStyle(
+                                color: _isCardPayment ? Colors.white70 : Colors.black54,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(width: 16),
-                // Balance payment (unselected)
+                // Balance payment
                 Expanded(
-                  child: Container(
-                    height: 127,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF3F4F5),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Stack(
-                      children: [
-                        Positioned(
-                          right: 16,
-                          top: 16,
-                          child: const Icon(Icons.star_border, color: Colors.black, size: 24),
-                        ),
-                        Positioned(
-                          left: 16,
-                          bottom: 27,
-                          child: const Text(
-                            'На баланс',
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
+                  child: GestureDetector(
+                    onTap: () => setState(() => _isCardPayment = false),
+                    child: Container(
+                      height: 127,
+                      decoration: BoxDecoration(
+                        color: !_isCardPayment ? const Color(0xFFFF4B00) : const Color(0xFFF3F4F5),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Stack(
+                        children: [
+                          Positioned(
+                            right: 16,
+                            top: 16,
+                            child: Icon(!_isCardPayment ? Icons.star : Icons.star_border, color: !_isCardPayment ? Colors.white : Colors.black, size: 24),
+                          ),
+                          Positioned(
+                            left: 16,
+                            bottom: 27,
+                            child: Text(
+                              'На баланс',
+                              style: TextStyle(
+                                color: !_isCardPayment ? Colors.white : Colors.black,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
-                        ),
-                        Positioned(
-                          left: 16,
-                          bottom: 16,
-                          child: const Text(
-                            'Коммиссия 0%',
-                            style: TextStyle(
-                              color: Colors.black54,
-                              fontSize: 12,
+                          Positioned(
+                            left: 16,
+                            bottom: 16,
+                            child: Text(
+                              'Коммиссия 0%',
+                              style: TextStyle(
+                                color: !_isCardPayment ? Colors.white70 : Colors.black54,
+                                fontSize: 12,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),

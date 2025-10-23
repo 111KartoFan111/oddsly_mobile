@@ -7,6 +7,7 @@ import 'package:oddsly/services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:oddsly/models/match_model.dart';
 import 'package:oddsly/screens/match_detail_screen.dart';
+import 'package:oddsly/screens/deposit_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,11 +20,27 @@ class _HomeScreenState extends State<HomeScreen> {
   final ApiService _apiService = ApiService();
   final AuthService _authService = AuthService();
   User? _firebaseUser;
+  String _selectedSport = 'football';
+  Future<List<MatchModel>>? _matchesFuture;
 
   @override
   void initState() {
     super.initState();
     _firebaseUser = _authService.currentUser;
+    _loadMatches();
+  }
+
+  void _loadMatches() {
+    setState(() {
+      _matchesFuture = _apiService.getLiveMatches(_selectedSport);
+    });
+  }
+
+  void _changeSport(String sport) {
+    setState(() {
+      _selectedSport = sport;
+      _loadMatches();
+    });
   }
 
   @override
@@ -61,7 +78,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 12),
             FutureBuilder<List<MatchModel>>(
-              future: _apiService.getLiveMatches('football'),
+              future: _matchesFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
@@ -143,14 +160,21 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFF4B00),
-                  borderRadius: BorderRadius.circular(8),
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const DepositScreen()),
+                  );
+                },
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF4B00),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.add, color: Colors.white, size: 20),
                 ),
-                child: const Icon(Icons.add, color: Colors.white, size: 20),
               ),
             ],
           ),
@@ -326,10 +350,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildSportChips() {
     final List<_SportChip> chips = [
-      _SportChip(label: 'Футбол', icon: Icons.sports_soccer, selected: true),
-      _SportChip(label: 'Баскетбол', icon: Icons.sports_basketball),
-      _SportChip(label: 'Теннис', icon: Icons.sports_tennis,),
-      _SportChip(label: 'Хоккей', icon: Icons.sports_hockey),
+      _SportChip(label: 'Футбол', icon: Icons.sports_soccer, value: 'football'),
+      _SportChip(label: 'Баскетбол', icon: Icons.sports_basketball, value: 'basketball'),
+      _SportChip(label: 'Теннис', icon: Icons.sports_tennis, value: 'tennis'),
+      _SportChip(label: 'Хоккей', icon: Icons.sports_hockey, value: 'hockey'),
     ];
 
     return SingleChildScrollView(
@@ -337,7 +361,10 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Row(
         children: [
           for (int i = 0; i < chips.length; i++) ...[
-            _buildChip(chips[i]),
+            GestureDetector(
+              onTap: () => _changeSport(chips[i].value),
+              child: _buildChip(chips[i], chips[i].value == _selectedSport),
+            ),
             if (i != chips.length - 1) const SizedBox(width: 12),
           ],
         ],
@@ -345,15 +372,15 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildChip(_SportChip chip) {
-    final Color bg = chip.selected ? Colors.black : Colors.white;
-    final Color fg = chip.selected ? Colors.white : Colors.black87;
+  Widget _buildChip(_SportChip chip, bool selected) {
+    final Color bg = selected ? Colors.black : Colors.white;
+    final Color fg = selected ? Colors.white : Colors.black87;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(8),
-        border: chip.selected ? null : Border.all(color: const Color(0xFFE4E5E5)),
+        border: selected ? null : Border.all(color: const Color(0xFFE4E5E5)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -588,6 +615,6 @@ class _HomeScreenState extends State<HomeScreen> {
 class _SportChip {
   final String label;
   final IconData icon;
-  final bool selected;
-  const _SportChip({required this.label, required this.icon, this.selected = false});
+  final String value;
+  const _SportChip({required this.label, required this.icon, required this.value});
 }

@@ -125,28 +125,6 @@ class _BetHistoryScreenState extends State<BetHistoryScreen> {
           },
         ),
       ),
-      bottomNavigationBar: Container(
-        height: 75,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 4,
-              offset: Offset(0, -2),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _buildNavItem(Icons.whatshot, 'Live', true),
-            _buildNavItem(Icons.sports_soccer, 'Спорт', false),
-            _buildNavItem(Icons.payment, 'Платежи', false),
-            _buildNavItem(Icons.more_vert, 'Еще', false),
-          ],
-        ),
-      ),
     );
   }
 

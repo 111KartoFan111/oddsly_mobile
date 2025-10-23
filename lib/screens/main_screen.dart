@@ -24,7 +24,7 @@ class _MainScreenState extends State<MainScreen> {
     const HomeScreen(),
     LiveScreen(onBetPlaced: _refreshProfile),
     const BalanceHistoryScreen(),
-    ProfileScreen(key: _profileKey),
+    ProfileScreen(key: _profileKey),  
   ];
 
   void _onItemTapped(int index) {
