@@ -308,44 +308,6 @@ class BetHistoryCard extends StatelessWidget {
               ],
             ),
           ),
-          
-          // Live indicator
-          if (statusText == 'Активно')
-            Positioned(
-              left: 16,
-              bottom: 34,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 9),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border.all(color: Colors.black),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 5),
-                    const Text(
-                      'Live',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.black,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          
           // Coefficient button
           Positioned(
             right: 16,
