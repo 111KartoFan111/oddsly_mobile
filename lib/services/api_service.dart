@@ -1,301 +1,410 @@
 // lib/services/api_service.dart
 
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:oddsly/models/user_model.dart';
 import 'package:oddsly/models/match_model.dart';
 
 class ApiService {
-  final String _baseUrl = 'http://localhost:3000';
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  Future<void> saveToken(String token) async {
+  // Мок данные для пользователя
+  Future<UserModel?> getUserProfile() async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    
+    final user = _auth.currentUser;
+    if (user == null) return null;
+
+    // Получаем сохраненный баланс или используем начальный
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('user_token', token);
+    final balance = prefs.getDouble('user_balance') ?? 10000.0;
+
+    return UserModel(
+      email: user.email ?? '',
+      balance: balance,
+    );
   }
 
-  Future<String?> getToken() async {
-    // Сначала пытаемся получить Firebase ID токен
-    final firebaseToken = await _getFirebaseToken();
-    if (firebaseToken != null) {
-      return firebaseToken;
+  // Сохранить баланс локально
+  Future<void> _saveBalance(double balance) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('user_balance', balance);
+  }
+
+  // Получить баланс
+  Future<double> _getBalance() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getDouble('user_balance') ?? 10000.0;
+  }
+
+  // Мок данные матчей
+  Future<List<MatchModel>> getMatches({String? status, String? league}) async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    
+    final allMatches = _getAllMockMatches();
+    
+    var filtered = allMatches;
+    if (status != null) {
+      filtered = filtered.where((m) => m.status == status).toList();
+    }
+    if (league != null) {
+      filtered = filtered.where((m) => m.league == league).toList();
     }
     
-    // Если Firebase токена нет, возвращаем сохраненный токен
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('user_token');
-  }
-
-  Future<String?> _getFirebaseToken() async {
-    try {
-      final user = _auth.currentUser;
-      if (user != null) {
-        return await user.getIdToken();
-      }
-    } catch (e) {
-      print('Error getting Firebase token: $e');
-    }
-    return null;
-  }
-
-  Future<void> clearToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('user_token');
-  }
-
-  Future<Map<String, dynamic>> register(String email, String password) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/register'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email, 'password': password}),
-      );
-      return jsonDecode(response.body);
-    } catch (e) {
-      return {'message': 'Connection error: ${e.toString()}'};
-    }
-  }
-
-  Future<Map<String, dynamic>> login(String email, String password) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email, 'password': password}),
-      );
-      final data = jsonDecode(response.body);
-      if (data.containsKey('token')) {
-        await saveToken(data['token']);
-      }
-      return data;
-    } catch (e) {
-      return {'message': 'Connection error: ${e.toString()}'};
-    }
-  }
-
-  Future<UserModel?> getUserProfile() async {
-    final token = await getToken();
-    if (token == null) return null;
-
-    try {
-      final response = await http.get(
-        Uri.parse('$_baseUrl/me'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        return UserModel.fromJson(jsonDecode(response.body));
-      } else {
-        return null;
-      }
-    } catch (e) {
-      return null;
-    }
-  }
-
-  Future<List<MatchModel>> getMatches({String? status, String? league}) async {
-    try {
-      final Map<String, String> queryParams = {};
-      if (status != null) queryParams['status'] = status;
-      if (league != null) queryParams['league'] = league;
-
-      final uri = Uri.parse(
-        '$_baseUrl/matches',
-      ).replace(queryParameters: queryParams);
-
-      final response = await http.get(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        return data.map((json) => MatchModel.fromJson(json)).toList();
-      } else {
-        return [];
-      }
-    } catch (e) {
-      return [];
-    }
-  }
-
-  Future<List<dynamic>> getTransactionHistory() async {
-    final token = await getToken();
-    if (token == null) throw Exception('User not authenticated');
-
-    try {
-      final response = await http.get(
-        Uri.parse('$_baseUrl/transactions'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        return [];
-      }
-    } catch (e) {
-      return [];
-    }
-  }
-
-  Future<Map<String, dynamic>> withdrawBalance(
-    double amount,
-    String cardNumber,
-  ) async {
-    final token = await getToken();
-    if (token == null) {
-      return {'message': 'User not authenticated.'};
-    }
-
-    try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/withdraw'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode({'amount': amount, 'cardNumber': cardNumber}),
-      );
-      return jsonDecode(response.body);
-    } catch (e) {
-      return {'message': 'Connection error: ${e.toString()}'};
-    }
-  }
-
-  Future<Map<String, dynamic>> depositBalance(
-    double amount,
-    String method, {
-    String? cardNumber,
-  }) async {
-    final token = await getToken();
-    if (token == null) {
-      return {'message': 'User not authenticated.'};
-    }
-
-    try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/deposit'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode({
-          'amount': amount,
-          'method': method,
-          'cardNumber': cardNumber,
-        }),
-      );
-      return jsonDecode(response.body);
-    } catch (e) {
-      return {'message': 'Connection error: ${e.toString()}'};
-    }
+    return filtered;
   }
 
   Future<List<MatchModel>> getLiveMatches(String sport) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$_baseUrl/matches/live?sport=$sport'),
-        headers: {'Content-Type': 'application/json'},
-      );
+    await Future.delayed(const Duration(milliseconds: 500));
+    
+    final Map<String, List<MatchModel>> matchesBySport = {
+      'football': _getFootballMatches(),
+      'basketball': _getBasketballMatches(),
+      'tennis': _getTennisMatches(),
+      'hockey': _getHockeyMatches(),
+    };
 
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        final matches = data.map((json) => MatchModel.fromJson(json)).toList();
-
-        // Сортировка: live вверху, затем по дате
-        matches.sort((a, b) {
-          if (a.isLive && !b.isLive) return -1;
-          if (!a.isLive && b.isLive) return 1;
-
-          final dateA = DateTime.parse(a.matchDate.toString());
-          final dateB = DateTime.parse(b.matchDate.toString());
-          return dateA.compareTo(dateB);
-        });
-
-        return matches;
-      } else {
-        return [];
-      }
-    } catch (e) {
-      return [];
-    }
+    return matchesBySport[sport] ?? _getFootballMatches();
   }
 
   Future<MatchModel?> getMatchDetails(String matchId) async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    
+    final allMatches = _getAllMockMatches();
     try {
-      final response = await http.get(
-        Uri.parse('$_baseUrl/matches/$matchId'),
-        headers: {'Content-Type': 'application/json'},
-      );
-
-      if (response.statusCode == 200) {
-        return MatchModel.fromJson(jsonDecode(response.body));
-      } else {
-        return null;
-      }
+      return allMatches.firstWhere((m) => m.id == matchId);
     } catch (e) {
       return null;
     }
   }
 
+  // Сделать ставку
   Future<Map<String, dynamic>> placeBet(
     String matchId,
     double amount,
     String outcome, {
     Map<String, dynamic>? matchInfo,
   }) async {
-    final token = await getToken();
-    if (token == null) {
-      return {'message': 'User not authenticated.'};
+    await Future.delayed(const Duration(milliseconds: 800));
+
+    if (amount < 100) {
+      return {'message': 'Минимальная ставка 100₸'};
     }
 
-    try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/bet'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode({
-          'matchId': matchId,
-          'amount': amount,
-          'outcome': outcome,
-          'matchInfo': matchInfo,
-        }),
-      );
-      return jsonDecode(response.body);
-    } catch (e) {
-      return {'message': 'Connection error: ${e.toString()}'};
+    final currentBalance = await _getBalance();
+    
+    if (currentBalance < amount) {
+      return {'message': 'Недостаточно средств на балансе'};
     }
+
+    final newBalance = currentBalance - amount;
+    await _saveBalance(newBalance);
+
+    // Сохраняем ставку локально
+    final prefs = await SharedPreferences.getInstance();
+    final betsJson = prefs.getString('user_bets') ?? '[]';
+    final List<dynamic> bets = jsonDecode(betsJson);
+    
+    final bet = {
+      'id': 'bet_${DateTime.now().millisecondsSinceEpoch}',
+      'matchId': matchId,
+      'amount': amount,
+      'outcome': outcome,
+      'status': 'active',
+      'team1Name': matchInfo?['team1Name'] ?? '',
+      'team2Name': matchInfo?['team2Name'] ?? '',
+      'league': matchInfo?['league'] ?? '',
+      'coefficient': _extractCoefficient(outcome),
+      'createdAt': DateTime.now().toIso8601String(),
+    };
+    
+    bets.insert(0, bet);
+    await prefs.setString('user_bets', jsonEncode(bets));
+
+    return {
+      'betId': bet['id'],
+      'newBalance': newBalance,
+    };
   }
 
-  Future<List<dynamic>> getBetHistory() async {
-    final token = await getToken();
-    if (token == null) throw Exception('User not authenticated');
-
+  double _extractCoefficient(String outcome) {
     try {
-      final response = await http.get(
-        Uri.parse('$_baseUrl/my-bets'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        return [];
+      final parts = outcome.split(' - ');
+      if (parts.length == 2) {
+        return double.parse(parts[1].trim());
       }
     } catch (e) {
-      return [];
+      // ignore
     }
+    return 1.0;
+  }
+
+  // История ставок
+  Future<List<dynamic>> getBetHistory() async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    
+    final prefs = await SharedPreferences.getInstance();
+    final betsJson = prefs.getString('user_bets') ?? '[]';
+    return jsonDecode(betsJson);
+  }
+
+  // Пополнение баланса
+  Future<Map<String, dynamic>> depositBalance(
+    double amount,
+    String method, {
+    String? cardNumber,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 800));
+
+    if (amount < 200) {
+      return {'message': 'Минимальная сумма пополнения 200₸'};
+    }
+
+    final currentBalance = await _getBalance();
+    final newBalance = currentBalance + amount;
+    await _saveBalance(newBalance);
+
+    // Сохраняем транзакцию
+    await _saveTransaction({
+      'id': 'trans_${DateTime.now().millisecondsSinceEpoch}',
+      'type': 'deposit',
+      'amount': amount,
+      'status': 'completed',
+      'cardNumber': cardNumber ?? '4567****7702',
+      'method': method,
+      'createdAt': DateTime.now().toIso8601String(),
+    });
+
+    return {
+      'newBalance': newBalance,
+    };
+  }
+
+  // Вывод средств
+  Future<Map<String, dynamic>> withdrawBalance(
+    double amount,
+    String cardNumber,
+  ) async {
+    await Future.delayed(const Duration(milliseconds: 800));
+
+    if (amount < 200) {
+      return {'message': 'Минимальная сумма вывода 200₸'};
+    }
+
+    final currentBalance = await _getBalance();
+    
+    if (currentBalance < amount) {
+      return {'message': 'Недостаточно средств на балансе'};
+    }
+
+    final newBalance = currentBalance - amount;
+    await _saveBalance(newBalance);
+
+    // Сохраняем транзакцию
+    await _saveTransaction({
+      'id': 'trans_${DateTime.now().millisecondsSinceEpoch}',
+      'type': 'withdrawal',
+      'amount': amount,
+      'status': 'completed',
+      'cardNumber': cardNumber,
+      'method': 'card',
+      'createdAt': DateTime.now().toIso8601String(),
+    });
+
+    return {
+      'newBalance': newBalance,
+    };
+  }
+
+  // История транзакций
+  Future<List<dynamic>> getTransactionHistory() async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    
+    final prefs = await SharedPreferences.getInstance();
+    final transJson = prefs.getString('user_transactions') ?? '[]';
+    return jsonDecode(transJson);
+  }
+
+  Future<void> _saveTransaction(Map<String, dynamic> transaction) async {
+    final prefs = await SharedPreferences.getInstance();
+    final transJson = prefs.getString('user_transactions') ?? '[]';
+    final List<dynamic> transactions = jsonDecode(transJson);
+    transactions.insert(0, transaction);
+    await prefs.setString('user_transactions', jsonEncode(transactions));
+  }
+
+  // Мок данные матчей
+  List<MatchModel> _getFootballMatches() {
+    return [
+      MatchModel(
+        id: 'match-1',
+        team1Name: 'Манчестер Сити',
+        team2Name: 'Ливерпуль',
+        league: 'Premier League',
+        team1Score: 2,
+        team2Score: 1,
+        time: '78:42',
+        status: 'live',
+        matchDate: DateTime.now().toIso8601String(),
+        odds: {'home': 1.85, 'draw': 3.40, 'away': 4.20},
+      ),
+      MatchModel(
+        id: 'match-2',
+        team1Name: 'Барселона',
+        team2Name: 'Бавария',
+        league: 'UEFA Champions League',
+        team1Score: 0,
+        team2Score: 0,
+        time: '20:00',
+        status: 'scheduled',
+        matchDate: DateTime.now().add(const Duration(hours: 2)).toIso8601String(),
+        odds: {'home': 2.10, 'draw': 3.20, 'away': 3.50},
+      ),
+      MatchModel(
+        id: 'match-3',
+        team1Name: 'Реал Мадрид',
+        team2Name: 'Атлетико',
+        league: 'La Liga',
+        team1Score: 3,
+        team2Score: 2,
+        time: '65:23',
+        status: 'live',
+        matchDate: DateTime.now().toIso8601String(),
+        odds: {'home': 1.65, 'draw': 3.80, 'away': 5.20},
+      ),
+      MatchModel(
+        id: 'match-4',
+        team1Name: 'Челси',
+        team2Name: 'Арсенал',
+        league: 'Premier League',
+        team1Score: 1,
+        team2Score: 1,
+        time: '45:00',
+        status: 'live',
+        matchDate: DateTime.now().toIso8601String(),
+        odds: {'home': 2.05, 'draw': 3.10, 'away': 3.75},
+      ),
+      MatchModel(
+        id: 'match-5',
+        team1Name: 'Ювентус',
+        team2Name: 'Интер',
+        league: 'Serie A',
+        team1Score: 0,
+        team2Score: 0,
+        time: '22:45',
+        status: 'scheduled',
+        matchDate: DateTime.now().add(const Duration(hours: 4)).toIso8601String(),
+        odds: {'home': 2.20, 'draw': 3.00, 'away': 3.40},
+      ),
+    ];
+  }
+
+  List<MatchModel> _getBasketballMatches() {
+    return [
+      MatchModel(
+        id: 'match-6',
+        team1Name: 'Lakers',
+        team2Name: 'Warriors',
+        league: 'NBA',
+        team1Score: 95,
+        team2Score: 88,
+        time: 'Q3 5:42',
+        status: 'live',
+        matchDate: DateTime.now().toIso8601String(),
+        odds: {'home': 1.75, 'draw': 15.0, 'away': 2.20},
+      ),
+      MatchModel(
+        id: 'match-7',
+        team1Name: 'Celtics',
+        team2Name: 'Heat',
+        league: 'NBA',
+        team1Score: 0,
+        team2Score: 0,
+        time: '22:00',
+        status: 'scheduled',
+        matchDate: DateTime.now().add(const Duration(hours: 3)).toIso8601String(),
+        odds: {'home': 1.90, 'draw': 12.0, 'away': 2.00},
+      ),
+      MatchModel(
+        id: 'match-8',
+        team1Name: 'Bucks',
+        team2Name: 'Nets',
+        league: 'NBA',
+        team1Score: 102,
+        team2Score: 98,
+        time: 'Q4 2:15',
+        status: 'live',
+        matchDate: DateTime.now().toIso8601String(),
+        odds: {'home': 1.85, 'draw': 13.0, 'away': 2.10},
+      ),
+    ];
+  }
+
+  List<MatchModel> _getTennisMatches() {
+    return [
+      MatchModel(
+        id: 'match-9',
+        team1Name: 'Джокович',
+        team2Name: 'Надаль',
+        league: 'ATP Tour',
+        team1Score: 2,
+        team2Score: 1,
+        time: 'Set 3',
+        status: 'live',
+        matchDate: DateTime.now().toIso8601String(),
+        odds: {'home': 1.55, 'draw': 1.0, 'away': 2.50},
+      ),
+      MatchModel(
+        id: 'match-10',
+        team1Name: 'Федерер',
+        team2Name: 'Медведев',
+        league: 'ATP Tour',
+        team1Score: 0,
+        team2Score: 0,
+        time: '19:30',
+        status: 'scheduled',
+        matchDate: DateTime.now().add(const Duration(hours: 1)).toIso8601String(),
+        odds: {'home': 1.70, 'draw': 1.0, 'away': 2.25},
+      ),
+    ];
+  }
+
+  List<MatchModel> _getHockeyMatches() {
+    return [
+      MatchModel(
+        id: 'match-11',
+        team1Name: 'Toronto Maple Leafs',
+        team2Name: 'Montreal Canadiens',
+        league: 'NHL',
+        team1Score: 3,
+        team2Score: 2,
+        time: '2nd 12:34',
+        status: 'live',
+        matchDate: DateTime.now().toIso8601String(),
+        odds: {'home': 1.80, 'draw': 4.50, 'away': 4.00},
+      ),
+      MatchModel(
+        id: 'match-12',
+        team1Name: 'Boston Bruins',
+        team2Name: 'New York Rangers',
+        league: 'NHL',
+        team1Score: 1,
+        team2Score: 1,
+        time: '1st 8:20',
+        status: 'live',
+        matchDate: DateTime.now().toIso8601String(),
+        odds: {'home': 1.95, 'draw': 4.20, 'away': 3.80},
+      ),
+    ];
+  }
+
+  List<MatchModel> _getAllMockMatches() {
+    return [
+      ..._getFootballMatches(),
+      ..._getBasketballMatches(),
+      ..._getTennisMatches(),
+      ..._getHockeyMatches(),
+    ];
   }
 }

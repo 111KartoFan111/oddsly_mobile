@@ -63,7 +63,6 @@ class ProfileScreenState extends State<ProfileScreen> {
       // Выходим из Firebase
       await _authService.signOut();
       // Очищаем токен API
-      await _apiService.clearToken();
       
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
